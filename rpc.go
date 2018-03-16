@@ -44,6 +44,8 @@ type RPC interface{
   ACall(method string, params interface{}) (chan JSONMessage,error)
   // Notify function
   Notify(method string, params interface{}) error
+  // Batch Call
+  BatchCall(batch []BatchRequest) ([](chan JSONMessage), error)
 
   // for Call Request and Notify Request
   // You SHOULD know if the request is either Call or Notify

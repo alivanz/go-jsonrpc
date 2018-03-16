@@ -12,6 +12,10 @@ type rpc struct{
   wmutex  sync.Mutex
   seq     uint64
 }
+type BatchRequest struct{
+  Method  string
+  Params  interface{}
+}
 
 func NewRPC(c Codec) RPC {
   return &rpc{
@@ -129,6 +133,34 @@ func (r *rpc) Call(method string, params interface{}) (*JSONMessage,error) {
     msg := <-cmsg
     return &msg, nil
   }
+}
+func (r *rpc) BatchCall(batch []BatchRequest) ([](chan JSONMessage),error) {
+  var requests []JSONMessage
+  var chans [](chan JSONMessage)
+  r.wmutex.Lock()
+  defer r.wmutex.Unlock()
+  for _,req := range batch{
+    jparams,err := json.Marshal(req.Params)
+    if err!=nil{
+      return nil,err
+    }
+    id := r.seq
+    r.seq = r.seq+1
+    msg := JSONMessage{
+      Version : "2.0",
+      Id      : &id,
+      Method  : req.Method,
+      Params  : json.RawMessage(jparams),
+    }
+    cmsg := make(chan JSONMessage)
+    r.pending[id] = cmsg
+    requests = append(requests, msg)
+    chans = append(chans, cmsg)
+  }
+  if err:=r.codec.WriteMessage(requests); err!=nil{
+    return nil,err
+  }
+  return chans, nil
 }
 func (r *rpc) Notify(method string, params interface{}) error {
   jparams,err := json.Marshal(params)
