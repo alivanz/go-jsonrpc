@@ -54,6 +54,10 @@ type RPC interface{
   // You dont have to set the ID, it will set later.
   OnRequest(method string, callback func(params json.RawMessage) *JSONMessage )
 
+  // Called if method not found
+  // WARNING : THIS WILL CHANGE THE "method not found" PROCEDURE!!!
+  OnNotFound(callback func(method string, params json.RawMessage) *JSONMessage)
+
   // Serve RPC Server
   Serve() error
 }

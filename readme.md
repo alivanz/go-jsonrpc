@@ -49,3 +49,15 @@ if result,err := rpc.Call("sum", []int{1,3,6}); err!=nil{
   log.Print(string(result.Result))
 }
 ```
+
+Customize "method not found" procedure
+```Go
+rpc.OnNotFound(func(method string, data json.RawMessage) *jsonrpc.JSONMessage {
+  if method[:3]=="abc"{
+    msg,_:=jsonrpc.NewJSONMessage(1234)
+    return msg
+  }
+  // Return default procedure
+  return &jsonrpc.MethodNotFound
+})
+```

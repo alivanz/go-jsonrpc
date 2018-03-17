@@ -8,6 +8,7 @@ import (
 type rpc struct{
   codec   Codec
   methods map[string] func(params json.RawMessage) *JSONMessage
+  methodnotfound func(method string, params json.RawMessage) *JSONMessage
   pending map[uint64](chan JSONMessage)
   wmutex  sync.Mutex
   seq     uint64
@@ -22,6 +23,9 @@ func NewRPC(c Codec) RPC {
     codec   : c,
     methods : make( map[string] func(params json.RawMessage) *JSONMessage ),
     pending : make( map[uint64] (chan JSONMessage) ),
+    methodnotfound: func(method string, params json.RawMessage) *JSONMessage {
+      return &MethodNotFound
+    },
   }
 }
 func (r *rpc) Serve() error {
@@ -60,17 +64,31 @@ func (r *rpc) Serve() error {
     }
   }
 }
+func (r *rpc) OnNotFound(callback func(method string, params json.RawMessage) *JSONMessage) {
+  if callback != nil{
+    r.methodnotfound = callback
+  }
+}
 func (r *rpc) incoming(msg JSONMessage) *JSONMessage {
   if msg.Method!=""{
     // notify / call
+    if msg.Id != nil{
+      r.wmutex.Lock()
+      r.seq = r.seq+1
+      r.wmutex.Unlock()
+    }
     if fx,found := r.methods[msg.Method]; !found {
-      resp := JSONMessage{
-        Version: "2.0",
-        Error: &ErrorObject{
-          Code: -32601,
-          Message: "method not found",
-        },
-      }
+      resp := *r.methodnotfound(msg.Method, msg.Params)
+      resp.Id = msg.Id
+      resp.Version = "2.0"
+      //resp := JSONMessage{
+      //  Id: msg.Id,
+      //  Version: "2.0",
+      //  Error: &ErrorObject{
+      //    Code: -32601,
+      //    Message: "method not found",
+      //  },
+      //}
       return &resp
     }else if resp := fx(msg.Params); resp!=nil{
       resp.Id = msg.Id
