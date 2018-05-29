@@ -78,9 +78,7 @@ func (r *rpc) incoming(msg JSONMessage) *JSONMessage {
       r.wmutex.Unlock()
     }
     if fx,found := r.methods[msg.Method]; !found {
-      resp := *r.methodnotfound(msg.Method, msg.Params)
-      resp.Id = msg.Id
-      resp.Version = "2.0"
+      resp := r.methodnotfound(msg.Method, msg.Params)
       //resp := JSONMessage{
       //  Id: msg.Id,
       //  Version: "2.0",
@@ -89,7 +87,14 @@ func (r *rpc) incoming(msg JSONMessage) *JSONMessage {
       //    Message: "method not found",
       //  },
       //}
-      return &resp
+      if msg.Id == nil{
+        return nil
+      }else if resp==nil{
+        return &InternalError
+      }
+      resp.Id = msg.Id
+      resp.Version = "2.0"
+      return resp
     }else if resp := fx(msg.Params); resp!=nil{
       resp.Id = msg.Id
       resp.Version = "2.0"
@@ -98,6 +103,9 @@ func (r *rpc) incoming(msg JSONMessage) *JSONMessage {
   }else{
     // result
     if msg.Id==nil{
+      // Id nil, no method
+      //log.Print(msg)
+      //return nil
       resp := JSONMessage{
         Version: "2.0",
         Error: &ErrorObject{
@@ -107,14 +115,7 @@ func (r *rpc) incoming(msg JSONMessage) *JSONMessage {
       }
       return &resp
     }else if cmsg,found := r.pending[*msg.Id]; !found {
-      resp := JSONMessage{
-        Version: "2.0",
-        Error: &ErrorObject{
-          Code: -32600,
-          Message: "ID not found",
-        },
-      }
-      return &resp
+      return &IDNotFound
     }else{
       delete(r.pending, *msg.Id)
       cmsg <- msg

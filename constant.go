@@ -28,3 +28,11 @@ var InternalError = JSONMessage{
     Message: "Internal JSON-RPC error.",
   },
 }
+
+var IDNotFound = JSONMessage{
+  Version: "2.0",
+  Error: &ErrorObject{
+    Code: -32600,
+    Message: "ID not found",
+  },
+}
