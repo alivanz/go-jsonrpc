@@ -45,12 +45,12 @@ func NewJSONCodec(con io.ReadWriteCloser) Codec {
     encoder: json.NewEncoder(con),
   }
 }
-func (c *JSONCodec) WriteMessage(message interface{}) error {
+func (c *JSONCodec) WriteJSON(message interface{}) error {
   c.wmutex.Lock()
   defer c.wmutex.Unlock()
   return c.encoder.Encode(message)
 }
-func (c *JSONCodec) ReadMessage(message interface{}) error {
+func (c *JSONCodec) ReadJSON(message interface{}) error {
   c.rmutex.Lock()
   defer c.rmutex.Unlock()
   return c.decoder.Decode(message)

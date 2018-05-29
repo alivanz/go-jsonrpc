@@ -32,20 +32,20 @@ func (r *rpc) Serve() error {
   for{
     var msg JSONMessage
     var bmsg []JSONMessage
-    if err := r.codec.ReadMessage(&msg); err==nil{
+    if err := r.codec.ReadJSON(&msg); err==nil{
       // Single
       resp := r.incoming(msg)
       if resp!=nil{
-        if err:=r.codec.WriteMessage(resp); err!=nil{
+        if err:=r.codec.WriteJSON(resp); err!=nil{
           return err
         }
       }
-    }else if err := r.codec.ReadMessage(&bmsg); err==nil{
+    }else if err := r.codec.ReadJSON(&bmsg); err==nil{
       // Batch
       for _,msg := range bmsg{
         resp := r.incoming(msg)
         if resp!=nil{
-          if err:=r.codec.WriteMessage(resp); err!=nil{
+          if err:=r.codec.WriteJSON(resp); err!=nil{
             return err
           }
         }
@@ -58,7 +58,7 @@ func (r *rpc) Serve() error {
           Message: err.Error(),
         },
       }
-      if err:=r.codec.WriteMessage(resp); err!=nil{
+      if err:=r.codec.WriteJSON(resp); err!=nil{
         return err
       }
     }
@@ -138,7 +138,7 @@ func (r *rpc) ACall(method string, params interface{}) (chan JSONMessage,error) 
     Method  : method,
     Params  : json.RawMessage(jparams),
   }
-  if err:=r.codec.WriteMessage(msg); err!=nil{
+  if err:=r.codec.WriteJSON(msg); err!=nil{
     return nil,err
   }
   cmsg := make(chan JSONMessage)
@@ -176,7 +176,7 @@ func (r *rpc) BatchCall(batch []BatchRequest) ([](chan JSONMessage),error) {
     requests = append(requests, msg)
     chans = append(chans, cmsg)
   }
-  if err:=r.codec.WriteMessage(requests); err!=nil{
+  if err:=r.codec.WriteJSON(requests); err!=nil{
     return nil,err
   }
   return chans, nil
@@ -192,7 +192,7 @@ func (r *rpc) Notify(method string, params interface{}) error {
     Method  : method,
     Params  : json.RawMessage(jparams),
   }
-  return r.codec.WriteMessage(msg)
+  return r.codec.WriteJSON(msg)
 }
 
 func (r *rpc) OnRequest(method string, callback func(params json.RawMessage) *JSONMessage) {

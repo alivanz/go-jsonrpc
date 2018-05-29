@@ -64,8 +64,8 @@ type RPC interface{
 
 type Codec interface{
   // Write message to connection
-  WriteMessage(message interface{}) error
+  WriteJSON(message interface{}) error
   // Read message from connection
   // Remember the input must be a pointer to make this work
-  ReadMessage(message interface{}) error
+  ReadJSON(message interface{}) error
 }
